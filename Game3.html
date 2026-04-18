@@ -126,7 +126,7 @@
     function update() {
         if (!gameActive) return;
 
-        if (Math.random() < 0.005) createItem();
+        if (Math.random() < 0.02) createItem();
 
         items.forEach((item, index) => {
             item.y += item.speed;
