@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <title>Game</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        width: 100%; height: 100%;
+        background: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+      }
+      #game-box {
+        width: min(100vw, 100vh);
+        height: min(100vw, 100vh);
+        background: beige;
+        border: 1px solid #222;
+        display: flex;
+        flex-direction: column;
+        padding: 24px;
+        font-family: 'Courier New', monospace;
+        font-size: 16px;
+        color: #000000;
+      }
+      #terminal {
+        flex: 1;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        word-break: break-word;
+        line-height: 1.5;
+      }
+      #input-line {
+        display: flex;
+        align-items: center;
+        line-height: 1.5;
+        margin-top: 2px;
+      }
+      #user-input {
+        background: transparent;
+        border: none;
+        outline: none;
+        color: #000000;
+        font-family: 'Courier New', monospace;
+        font-size: 16px;
+        flex: 1;
+        caret-color: black;
+      }
+      #canvas { display: none; }
+    </style>
+  </head>
+  <body>
+    <div id="game-box">
+      <div id="terminal"></div>
+      <div id="input-line">
+        <span id="prompt">&gt;&nbsp;</span>
+        <input id="user-input" type="text" autofocus/>
+      </div>
+    </div>
+    <canvas id="canvas" tabindex=-1></canvas>
+
+    <script type='text/javascript'>
+      localStorage.removeItem('terminal_lines');
+      var terminal = document.getElementById('terminal');
+
+      function appendText(text) {
+        var line = document.createElement('div');
+        line.textContent = text;
+        terminal.appendChild(line);
+        terminal.scrollTop = terminal.scrollHeight;
+      }
+
+      var Module = {
+        canvas: document.getElementById('canvas'),
+        print: (text) => appendText(text),
+        printErr: () => {},
+        setStatus: () => {},
+        totalDependencies: 0,
+        monitorRunDependencies: () => {},
+      };
+
+      window.onerror = (msg) => appendText('Error: ' + msg);
+
+      document.getElementById('user-input').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          var text = this.value.trim();
+          if (!text) return;
+          this.value = '';
+          Module.ccall('receive_input', null, ['string'], [text]);
+        }
+      });
+
+      // Keep input focused when clicking anywhere
+      document.getElementById('game-box').addEventListener('click', function() {
+        document.getElementById('user-input').focus();
+      });
+    </script>
+    <script async type="text/javascript" src="Site.js"></script>
+  </body>
+</html>

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sky Catcher</title>
+    <style>
+        body { background: beige; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: Arial, sans-serif; overflow: hidden; }
+        .game-container { position: relative; }
+        #gameCanvas { background: #fff; border: 4px solid #333; border-radius: 8px; cursor: none; display: block; }
+        
+        .ui { position: absolute; top: -40px; width: 100%; display: flex; justify-content: space-between; font-size: 20px; font-weight: bold; color: #333; }
+        
+        /* OVERLAY SCREENS (Start and Game Over) */
+        .overlay {
+            position: absolute;
+            top: 0; left: 0; width: 405px; height: 505px;
+            background: rgba(0, 0, 0, .85);
+            color: rgb(255, 255, 255);
+            display: flex; 
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 4px;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        #gameOverScreen { display: none; } /* Hidden at start */
+
+        button {
+            margin-top: 20px;
+            padding: 12px 30px;
+            font-size: 18px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+        .start-btn { background: rgb(83, 81, 81); color: white;}
+        .menu-btn { background: #000000; color: white; margin-top: 10px; }
+        button:hover { opacity: 0.9; transform: scale(1.05); }
+
+        ul { text-align: left; margin-bottom: 20px; line-height: 1.6; }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <div class="ui">
+            <span>Score: <span id="score">0</span></span>
+            <span>Lives: <span id="lives">3</span></span>
+        </div>
+        
+        <canvas id="gameCanvas" width="400" height="500"></canvas>
+
+        <!-- Start Screen -->
+        <div id="startScreen" class="overlay">
+            <h1 style="font-size: 36px; color: #2ecc71;">Sky Catcher</h1>
+            <ul>
+                <li>Move your <b>Mouse</b> to control the basket.</li>
+                <li>Catch the <b>Green Dots</b> for points.</li>
+                <li>Don't let them hit the ground!</li>
+                <li>You have <b>3 Lives</b>.</li>
+            </ul>
+            <button class="start-btn" onclick="startGame()">Start Game</button>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="gameOverScreen" class="overlay">
+            <h1 style="font-size: 40px; color: #ff4d4d;">GAME OVER</h1>
+            <p id="finalScore" style="font-size: 24px; margin: 0;"></p>
+            <button class="menu-btn" onclick="goToMenu()">Main Menu</button>
+        </div>
+    </div>
+
+<script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const scoreEl = document.getElementById("score");
+    const livesEl = document.getElementById("lives");
+    
+    const startScreen = document.getElementById("startScreen");
+    const gameOverScreen = document.getElementById("gameOverScreen");
+    const finalScoreEl = document.getElementById("finalScore");
+
+    let score = 0;
+    let lives = 3;
+    let gameActive = false; // Starts as false
+
+    const basket = { x: 175, y: 460, w: 60, h: 20 };
+    const items = [];
+
+    function goToMenu() {
+        window.location.href = "http://localhost:5500/site.html";
+    }
+
+    function startGame() {
+        gameActive = true;
+        startScreen.style.display = "none";
+        canvas.style.cursor = "none";
+    }
+
+    function endGame() {
+        gameActive = false;
+        canvas.style.cursor = "default";
+        finalScoreEl.innerText = "Final Score: " + score;
+        gameOverScreen.style.display = "flex";
+    }
+
+    function createItem() {
+        items.push({
+            x: Math.random() * (canvas.width - 22),
+            y: -20,
+            size: 15,
+            speed: 2
+        });
+    }
+
+    canvas.addEventListener("mousemove", (e) => {
+        if (!gameActive) return;
+        const rect = canvas.getBoundingClientRect();
+        basket.x = e.clientX - rect.left - basket.w / 2;
+    });
+
+    function update() {
+        if (!gameActive) return;
+
+        if (Math.random() < 0.005) createItem();
+
+        items.forEach((item, index) => {
+            item.y += item.speed;
+
+            // Catch item
+            if (item.y + item.size > basket.y && item.x > basket.x && item.x < basket.x + basket.w) {
+                items.splice(index, 1);
+                score++;
+                scoreEl.innerText = score;
+            }
+
+            // Miss item
+            if (item.y > canvas.height) {
+                items.splice(index, 1);
+                lives--;
+                livesEl.innerText = lives;
+                if (lives <= 0) endGame();
+            }
+        });
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw Basket
+        ctx.fillStyle = "#8B4513";
+        ctx.fillRect(basket.x, basket.y, basket.w, basket.h);
+
+        // Draw Items
+        ctx.fillStyle = "#2ECC71";
+        items.forEach(item => {
+            ctx.beginPath();
+            ctx.arc(item.x, item.y, item.size, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        requestAnimationFrame(() => {
+            update();
+            draw();
+        });
+    }
+
+    draw();
+</script>
+</body>
+</html>

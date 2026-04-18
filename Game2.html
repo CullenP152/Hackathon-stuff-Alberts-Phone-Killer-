@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Road Dodge Game</title>
+    <style>
+        body {
+            background-color: beige;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: Arial;
+        }
+
+        .game-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        canvas {
+            display: block;
+            background-color: #2f2f2f;
+            border-radius: 5px;
+        }
+
+        /* Overlays for Start and Game Over */
+        #gameOverScreen, #startScreen {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 500px;
+            height: 400px;
+            background: rgba(0,0,0,0.85);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            text-align: center;
+            border-radius: 5px;
+        }
+
+        #gameOverScreen {
+            display: none;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            color: white;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .menu-btn {
+            background-color: #6c757d;
+        }
+
+        .start-btn {
+            background-color: #007bff;
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <canvas id="gameCanvas" width="500" height="400"></canvas>
+
+    <!-- START SCREEN -->
+    <div id="startScreen">
+        <h1>ROAD DODGE</h1>
+        <p>Use Arrow Up/Down to dodge traffic.</p>
+        <button class="start-btn" onclick="startGame()">Start Game</button>
+    </div>
+
+    <!-- GAME OVER SCREEN -->
+    <div id="gameOverScreen">
+        <h1>GAME OVER</h1>
+        <p id="finalScoreText" style="font-size: 24px;"></p>
+        <div class="btn-group">
+            <button class="menu-btn" onclick="goToMenu()">Main Menu</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const gameOverScreen = document.getElementById("gameOverScreen");
+    const startScreen = document.getElementById("startScreen");
+    const finalScoreText = document.getElementById("finalScoreText");
+
+    const lanes = [15, 90, 170, 250, 330];
+
+    // PLAYER
+    let player = { 
+        x: 50, 
+        lane: 2, 
+        y: lanes[2], 
+        width: 25, 
+        height: 20 
+    };
+
+    // ENEMIES
+    let enemies = [];
+    let numEnemies = 5;
+
+    for (let i = 0; i < numEnemies; i++) {
+        let lane = Math.floor(Math.random() * lanes.length);
+        enemies.push({
+            x: canvas.width + i * 150,
+            lane: lane,
+            y: lanes[lane],
+            width: 25,
+            height: 20,
+            baseSpeed: 1 + Math.random() * 2 // SLOWER START: Changed from 4
+        });
+    }
+
+    // GAME STATE
+    let keys = {};
+    let lineOffset = 0;
+    let isGameOver = false;
+    let gameStarted = false; 
+    let score = 0;
+    let difficultyMultiplier = 1;
+
+    document.addEventListener("keydown", e => keys[e.key] = true);
+    document.addEventListener("keyup", e => keys[e.key] = false);
+
+    function startGame() {
+        gameStarted = true;
+        startScreen.style.display = "none";
+    }
+
+    function goToMenu() {
+        window.location.href = "http://localhost:5500/site.html";
+    }
+
+    function endGame() {
+        isGameOver = true;
+        finalScoreText.innerText = "Final Score: " + Math.floor(score);
+        gameOverScreen.style.display = "flex";
+    }
+
+    function update() {
+        if (!gameStarted || isGameOver) return;
+
+        score += 0.1; // SLOWER SCORE: Changed from 0.15
+        
+        // SLOWER SCALING: Changed divisor from 500 to 1000
+        difficultyMultiplier = 1 + (score / 1000);
+
+        if (keys["ArrowUp"]) {
+            if (player.lane > 0) player.lane--;
+            keys["ArrowUp"] = false;
+        }
+        if (keys["ArrowDown"]) {
+            if (player.lane < lanes.length - 1) player.lane++;
+            keys["ArrowDown"] = false;
+        }
+        player.y = lanes[player.lane];
+
+        enemies.forEach(enemy => {
+            enemy.x -= enemy.baseSpeed * difficultyMultiplier;
+            
+            if (enemy.x < -enemy.width) {
+                enemy.x = canvas.width + Math.random() * 200;
+                enemy.lane = Math.floor(Math.random() * lanes.length);
+                enemy.y = lanes[enemy.lane];
+            }
+
+            if (
+                player.x < enemy.x + enemy.width &&
+                player.x + player.width > enemy.x &&
+                player.y < enemy.y + enemy.height &&
+                player.y + player.height > enemy.y
+            ) {
+                endGame();
+            }
+        });
+
+        // SLOWER ROAD ANIMATION: Changed from 7 to 4
+        lineOffset += 4 * difficultyMultiplier;
+        if (lineOffset > 45) lineOffset = 0;
+    }
+
+    function drawRoad() {
+        ctx.fillStyle = "#2f2f2f";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.7)";
+        ctx.lineWidth = 4;
+        ctx.setLineDash([25, 20]);
+        
+        for (let y = 65; y < canvas.height; y += 80) {
+            ctx.beginPath();
+            ctx.moveTo(-lineOffset, y);
+            ctx.lineTo(canvas.width + 100, y);
+            ctx.stroke();
+        }
+        ctx.setLineDash([]);
+    }
+
+    function draw() {
+        drawRoad();
+
+        // UI
+        ctx.fillStyle = "white";
+        ctx.font = "bold 20px Arial";
+        ctx.fillText("Score: " + Math.floor(score), 20, 35);
+        ctx.font = "14px Arial";
+        ctx.fillText("Level: " + difficultyMultiplier.toFixed(1) + "x", 420, 35);
+
+        // Player
+        ctx.fillStyle = "#00aaff";
+        ctx.fillRect(player.x, player.y, player.width, player.height);
+
+        // Enemies
+        ctx.fillStyle = "#ff4d4d";
+        enemies.forEach(enemy => {
+            ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+        });
+    }
+
+    function gameLoop() {
+        update();
+        draw();
+        requestAnimationFrame(gameLoop);
+    }
+
+    gameLoop();
+</script>
+
+</body>
+</html>
