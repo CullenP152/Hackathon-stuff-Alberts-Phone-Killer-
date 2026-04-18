@@ -107,7 +107,7 @@ app.post('/api/update-task', (req, res) => {
     );
 });
 
-// Get today's daily quests
+// ===== ADDED: Get today's daily quests =====
 app.get('/api/daily-quests', (req, res) => {
     db.query('SELECT * FROM daily_quests WHERE id = 1', (err, results) => {
         if (err) {
@@ -119,7 +119,7 @@ app.get('/api/daily-quests', (req, res) => {
     });
 });
 
-// Save today's daily quests
+// ===== ADDED: Save today's daily quests =====
 app.post('/api/daily-quests', (req, res) => {
     const { date, questIds } = req.body;
     db.query(
@@ -135,6 +135,7 @@ app.post('/api/daily-quests', (req, res) => {
         }
     );
 });
+// ===== END ADDED =====
 
 // Start the server
 const PORT = 3000;
